@@ -1,18 +1,20 @@
 
-//T14_37-10683_Marwa_Gaser
+//T14_37_10683_Marwa_Gaser
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 public class CFG {
 	String input;
 	static HashMap<String, String> Firsttable;
+	static HashMap<String, String> Followtable;
 
 	public CFG(String input) {
 		this.input = input;
 		Firsttable = new HashMap<String, String>();
-
+		Followtable = new HashMap<String, String>();
 	}
 
 	public static String[] splitString(String s, String operator) {
@@ -23,13 +25,11 @@ public class CFG {
 	public void getFirst(HashMap<String, String> hmap) {
 		boolean changed = false;
 		Firsttable.clear();
-
 		Set<String> keys = hmap.keySet();
 		for (String key : keys) {
 			String value = hmap.get(key);
 			String[] sentential_form = splitString(value, ",");
 			int length = sentential_form.length;
-
 			for (int i = 0; i < length; i++) {
 				Character c = sentential_form[i].charAt(0);
 				int ascii = c;
@@ -54,56 +54,67 @@ public class CFG {
 
 		while (changed) {
 			changed = false;
-			for (String key : keys) {
+			for (String key : keys) { // for every rule in the CFG
 				String value = hmap.get(key);
-				String[] sentential_form = splitString(value, ",");
+				String[] sentential_form = splitString(value, ","); // get its right hand side in an array
 				int length = sentential_form.length;
-				for (int i = 0; i < length; i++) {
-					String[] current = splitString(sentential_form[i], "");
-					int epsilonCount = 0;
-					for (int j = 0; j < current.length; j++) {
+				for (int i = 0; i < length; i++) { // for each sentential form in the RHS
+					String[] current = splitString(sentential_form[i], ""); // populate an array with the letters of
+																			// that sentential form
+					int epsilonCount = 0; // a counter to count the number of variables that go to epsilon in that rule
+					for (int j = 0; j < current.length; j++) { // for each letter in the sentential form
 						Character x = current[j].charAt(0);
-						int ascii = x;
+						int ascii = x; // get its ASCII
 						if (ascii >= 65 && ascii <= 90 && Firsttable.get(x.toString()).contains("e")) { // if upper case
-							epsilonCount++;
-						} else {
-							epsilonCount = 0;
+																										// and its first
+																										// has epsilon
+							epsilonCount++; // increment the epsilon counter
+						} else { // otherwise
+							epsilonCount = 0; // set the counter to zero
 							break;
 						}
 
 					}
-					if (epsilonCount == current.length) {
+					if (epsilonCount == current.length) { // if the count of epsilons = the length of the sentential
+															// form, this means that the LHS variable should have
+															// epsilon in its First
 						// do the if logic
-						if (!Firsttable.get(key).contains("e")) {
-							String str = Firsttable.get(key) + ",e";
+						if (!Firsttable.get(key).contains("e")) { // if the LHS variable doesn't have epsilon in its
+																	// First
+							String str = Firsttable.get(key) + ",e"; // add epsilon to its First
 							HashSet<String> hs = new HashSet<String>(Arrays.asList(str.split(",")));
 							String e = String.join(",", hs);
 							Firsttable.put(key, e);
-							changed = true;
+							changed = true; // set the boolean to true as the Firsttable hash table was modified
 						}
 					}
-					////
-					for (int z = 0; z < length; z++) {
-						for (int j = 0; j < current.length; j++) {
+					for (int z = 0; z < length; z++) { // For each sentential form
+						for (int j = 0; j < current.length; j++) { // loop on every varaible/letter on the RHS of every
+																	// sentential form
 							Character x = current[j].charAt(0);
 							int ascii = x;
-							int epsilonPreceding = 0;
-							if (j > 0) {
-								for (int k = 0; k < j; k++) {
+							int epsilonPreceding = 0; // a counter that checks the number of epsilons preceding that
+														// variable/letter
+							if (j > 0) { // if the letter is at a position greater than the first
+								for (int k = 0; k < j; k++) { // loop on every variable/terminal before it
 									Character t = current[k].charAt(0);
 									int asciiT = t;
 									if (asciiT >= 65 && asciiT <= 90 && Firsttable.get(t.toString()).contains("e")) { // if
-																														// upper
-																														// case
-										epsilonPreceding++;
-									} else {
-										epsilonPreceding = 0;
+																														// variable
+																														// has
+																														// an
+																														// epsilon
+										epsilonPreceding++; // increment epsilonPreceding count
+									} else { // otherwise
+										epsilonPreceding = 0; // set it to zero
 										break;
 									}
 								}
 							}
 
-							if (j == 0 || epsilonPreceding == j) {
+							if (j == 0 || epsilonPreceding == j) { // if the variable or terminal is at position zero,
+																	// or the all preceding letters have epsilon in
+																	// their first
 
 								if (Firsttable.containsKey(current[j])) {
 									String dd = Firsttable.get(current[j]);
@@ -140,6 +151,191 @@ public class CFG {
 		}
 	}
 
+	public void getFollow(LinkedHashMap<String, String> hmap) {
+		boolean changed = false;
+		Followtable.clear();
+		Set<String> keys = hmap.keySet();
+		boolean setFirstVar = false;
+		for (String key : keys) {
+			if (setFirstVar == false) {
+				Followtable.put(key, "$");
+				setFirstVar = true;
+				changed = true;
+			} else {
+				Followtable.put(key, "");
+			}
+		}
+		while (changed) {
+
+			changed = false;
+			for (String key : keys) {
+				String[] sentential_forms = splitString(hmap.get(key), ",");
+				for (int i = 0; i < sentential_forms.length; i++) {
+					String[] current = splitString(sentential_forms[i], ""); // word letter by letter
+					for (int j = 0; j < current.length; j++) { // for each letter
+						Character x = current[j].charAt(0);
+						int ascii = x;
+						if (ascii >= 65 && ascii <= 90) { // if its a variable
+							if (j + 1 < current.length) {
+								for (int p = j + 1; p < current.length; p++) {
+									String newString;
+									Character p1 = current[p].charAt(0);
+									int asciiP = p1;
+									if (asciiP >= 65 && asciiP <= 90) { // if p is a variable
+										if (!(Firsttable.get(current[p]).contains("e"))) { // add and leave
+											newString = (Firsttable.get(current[p]));
+											String[] newS = splitString(newString, ",");
+											for (int h = 0; h < newS.length; h++) {
+												if (!(Followtable.get(current[j]).contains(newS[h]))) {
+													if (Followtable.get(current[j]).equals("")) {
+														String value = newS[h];
+														Followtable.put(current[j], value);
+														changed = true;
+													} else {
+														String value = Followtable.get(current[j]) + "," + newS[h];
+														HashSet<String> hs = new HashSet<String>(
+																Arrays.asList(value.split(",")));
+														value = String.join(",", hs);
+														Followtable.put(current[j], value);
+														changed = true;
+													}
+												}
+
+											}
+											break;
+										} else if ((Firsttable.get(current[p]).contains(",e"))) { // add and stay bc
+																									// epsilon
+											newString = (Firsttable.get(current[p]).replace(",e", ""));
+											String[] newS = splitString(newString, ",");
+											for (int h = 0; h < newS.length; h++) {
+												if (!(Followtable.get(current[j]).contains(newS[h]))) {
+													if (Followtable.get(current[j]).equals("")) {
+														String value = newS[h];
+														Followtable.put(current[j], value);
+														changed = true;
+													} else {
+														String value = Followtable.get(current[j]) + "," + newS[h];
+														HashSet<String> hs = new HashSet<String>(
+																Arrays.asList(value.split(",")));
+														value = String.join(",", hs);
+														Followtable.put(current[j], value);
+														changed = true;
+													}
+												}
+
+											}
+											if (p == current.length - 1) {
+												String followLHS = Followtable.get(key);
+												String[] LHSarr = splitString(followLHS, ",");
+												for (int r = 0; r < LHSarr.length; r++) {
+													if (!(Followtable.get(current[j]).contains(LHSarr[r]))) {
+														if (Followtable.get(current[j]).equals("")) {
+															Followtable.put(current[j], LHSarr[r]);
+															changed = true;
+														} else {
+															String value = Followtable.get(current[j]) + ","
+																	+ LHSarr[r];
+															HashSet<String> hs = new HashSet<String>(
+																	Arrays.asList(value.split(",")));
+															value = String.join(",", hs);
+															Followtable.put(current[j], value);
+															changed = true;
+														}
+													}
+												}
+												// add the follow of parent to me too
+											}
+										} else if ((Firsttable.get(current[p]).contains("e"))) { // add and staybc
+																									// epsilon
+											newString = (Firsttable.get(current[p]).replace("e", ""));
+											String[] newS = splitString(newString, ",");
+											for (int h = 0; h < newS.length; h++) {
+												if (!(Followtable.get(current[j]).contains(newS[h]))) {
+													if (Followtable.get(current[j]).equals("")) {
+														String value = newS[h];
+														Followtable.put(current[j], value);
+														changed = true;
+													} else {
+														String value = Followtable.get(current[j]) + "," + newS[h];
+														HashSet<String> hs = new HashSet<String>(
+																Arrays.asList(value.split(",")));
+														value = String.join(",", hs);
+														Followtable.put(current[j], value);
+														changed = true;
+													}
+												}
+
+											}
+											if (p == current.length - 1) {
+
+												String followLHS = Followtable.get(key);
+												String[] LHSarr = splitString(followLHS, ",");
+												for (int r = 0; r < LHSarr.length; r++) {
+													if (!(Followtable.get(current[j]).contains(LHSarr[r]))) {
+														if (Followtable.get(current[j]).equals("")) {
+															Followtable.put(current[j], LHSarr[r]);
+															changed = true;
+														} else {
+															String value = Followtable.get(current[j]) + ","
+																	+ LHSarr[r];
+															HashSet<String> hs = new HashSet<String>(
+																	Arrays.asList(value.split(",")));
+															value = String.join(",", hs);
+															Followtable.put(current[j], value);
+															changed = true;
+														}
+													}
+												}
+												// add the follow of parent to me too
+											}
+										}
+									} else {
+
+										if (!(Followtable.get(current[j]).contains(current[p]))) {
+											if (Followtable.get(current[j]).equals("")) {
+												String value = current[p];
+												Followtable.put(current[j], value);
+												changed = true;
+											} else {
+												String value = Followtable.get(current[j]) + "," + current[p];
+												HashSet<String> hs = new HashSet<String>(
+														Arrays.asList(value.split(",")));
+												value = String.join(",", hs);
+												Followtable.put(current[j], value);
+												changed = true;
+											}
+										}
+
+										break;
+									}
+
+								}
+							} else if (j + 1 == current.length) {
+								// if im the last var my follow is the parents follow
+								String followLHS = Followtable.get(key);
+								String[] LHSarr = splitString(followLHS, ",");
+								for (int r = 0; r < LHSarr.length; r++) {
+									if (!(Followtable.get(current[j]).contains(LHSarr[r]))) {
+										if (Followtable.get(current[j]).equals("")) {
+											Followtable.put(current[j], LHSarr[r]);
+											changed = true;
+										} else {
+											String value = Followtable.get(current[j]) + "," + LHSarr[r];
+											HashSet<String> hs = new HashSet<String>(Arrays.asList(value.split(",")));
+											value = String.join(",", hs);
+											Followtable.put(current[j], value);
+											changed = true;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	public void First() {
 
 		HashMap<String, String> hmap = new HashMap<String, String>();
@@ -160,46 +356,85 @@ public class CFG {
 			finalAnswer += key + "," + answer + ";";
 		}
 		finalAnswer = finalAnswer.substring(0, finalAnswer.length() - 1);
-		System.out.println(finalAnswer);
+		System.out.println("First: " + finalAnswer);
+	}
+
+	public void Follow() {
+		LinkedHashMap<String, String> hmap = new LinkedHashMap<String, String>();
+		String[] CFGrules = splitString(this.input, ";");
+		for (int i = 0; i < CFGrules.length; i++) {
+			String key = CFGrules[i].substring(0, 1);
+			String value = CFGrules[i].substring(2);
+
+			hmap.put(key, value);
+
+		}
+
+		getFollow(hmap);
+		Set<String> keys = hmap.keySet();
+		String finalAnswer = "";
+		for (String key : keys) {
+			String answer = Followtable.get(key);
+
+			HashSet<String> hs = new HashSet<String>(Arrays.asList(answer.split(",")));
+			answer = String.join("", hs);
+			finalAnswer += key + "," + answer + ";";
+		}
+		finalAnswer = finalAnswer.substring(0, finalAnswer.length() - 1);
+		System.out.println("Follow: " + finalAnswer);
 	}
 
 	public static void main(String[] args) {
 
-		CFG cfg = new CFG("L,SdL,S;T,aSb,iaLb,e;S,ScT,T");
+		CFG cfg = new CFG("S,ScT,T;T,aSb,iaLb,e;L,SdL,S");
+		cfg.First();
+		cfg.Follow();
+		System.out.println("===========================");
 		CFG cfg2 = new CFG("S,aTbS,e;T,aTb,e");
+		cfg2.First();
+		cfg2.Follow();
+		System.out.println("===========================");
 		CFG cfg3 = new CFG("S,SAB,SBC,e;A,aAa,e;B,bB,e;C,cC,e");
+		cfg3.First();
+		cfg3.Follow();
+		System.out.println("===========================");
 		CFG cfg4 = new CFG("S,AB;A,aA,b;B,CA;C,cC,d");
+		cfg4.First();
+		cfg4.Follow();
+		System.out.println("===========================");
 		CFG cfg5 = new CFG("S,lAr,a;A,lArB,aB;B,cSB,e");
+		cfg5.First();
+		cfg5.Follow();
+		System.out.println("===========================");
 		CFG cfg6 = new CFG("S,aA;A,SB,e;B,bA,cA");
-
+		cfg6.First();
+		cfg6.Follow();
+		System.out.println("===========================");
 		CFG cfg7 = new CFG("S,ABCDZ;A,a,e;B,b,e;C,c;D,d,e;Z,z,e");
-		CFG cfg8 = new CFG("Z,TX;X,+TX-,e;T,FV;V,*FV,e;F,(Z),i");
+		cfg7.First();
+		cfg7.Follow();
+		System.out.println("===========================");
+		CFG cfg8 = new CFG("Z,TX;X,+TX,e;T,FV;V,*FV,e;F,(Z),i");
+		cfg8.First();
+		cfg8.Follow();
+		System.out.println("===========================");
 		CFG cfg9 = new CFG("S,ACB,CbB,Ba;A,da,BC;B,g,e;C,h,e");
+		cfg9.First();
+		cfg9.Follow();
+		System.out.println("===========================");
 		CFG cfg10 = new CFG("S,Bb,Cd;B,aB,e;C,cC,e");
+		cfg10.First();
+		cfg10.Follow();
+		System.out.println("===========================");
 		CFG cfg11 = new CFG("S,aBDh;B,cC;C,bC,e;D,EF;E,g,e;F,f,e");
-		CFG cfg12 = new CFG("S,A;A,aBF;F,dF,e;B,b;C,g");
+		cfg11.First();
+		cfg11.Follow();
+		System.out.println("===========================");
+		CFG cfg12 = new CFG("S,A;A,aBF;F,dF,e;B,b;C,g");	
 		CFG cfg13 = new CFG("S,(L),a;L,SQ;Q,_SQ,e");
 		CFG cfg14 = new CFG("S,AaAb,BbBa;A,e;B,e");
 		CFG cfg15 = new CFG("E,TQ;Q,+TQ,e;T,FW;W,xFW,e;F,(E),i");
 		CFG cfg16 = new CFG("S,ABC,CbB,Ba;A,dA,BC;B,g,e;C,h,e");
-
-		cfg.First();
-		cfg2.First();
-		cfg3.First();
-		cfg4.First();
-		cfg5.First();
-		cfg6.First();
-
-		cfg7.First();
-		cfg8.First();
-		cfg9.First();
-		cfg10.First();
-		cfg11.First();
-		cfg12.First();
-		cfg13.First();
-		cfg14.First();
-		cfg15.First();
-		cfg16.First();
 
 	}
 }
