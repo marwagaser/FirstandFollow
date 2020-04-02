@@ -22,7 +22,7 @@ public class CFG {
 		return sections;
 	}
 
-	public void getFirst(HashMap<String, String> hmap) {
+	public void getFirst(LinkedHashMap<String, String> hmap) {
 		boolean changed = false;
 		Firsttable.clear();
 		Set<String> keys = hmap.keySet();
@@ -336,9 +336,9 @@ public class CFG {
 		}
 	}
 
-	public void First() {
+	public String First() {
 
-		HashMap<String, String> hmap = new HashMap<String, String>();
+		LinkedHashMap<String, String> hmap = new LinkedHashMap<String, String>();
 		String[] CFGrules = splitString(this.input, ";");
 		for (int i = 0; i < CFGrules.length; i++) {
 			String key = CFGrules[i].substring(0, 1);
@@ -353,13 +353,16 @@ public class CFG {
 			String answer = Firsttable.get(key);
 			HashSet<String> hs = new HashSet<String>(Arrays.asList(answer.split(",")));
 			answer = String.join("", hs);
+			char answerArray[] = answer.toCharArray();
+			Arrays.sort(answerArray);
+			answer = new String(answerArray);
 			finalAnswer += key + "," + answer + ";";
 		}
 		finalAnswer = finalAnswer.substring(0, finalAnswer.length() - 1);
-		System.out.println("First: " + finalAnswer);
+		return finalAnswer;
 	}
 
-	public void Follow() {
+	public String Follow() {
 		LinkedHashMap<String, String> hmap = new LinkedHashMap<String, String>();
 		String[] CFGrules = splitString(this.input, ";");
 		for (int i = 0; i < CFGrules.length; i++) {
@@ -378,63 +381,26 @@ public class CFG {
 
 			HashSet<String> hs = new HashSet<String>(Arrays.asList(answer.split(",")));
 			answer = String.join("", hs);
+			char answerArray[] = answer.toCharArray();
+			Arrays.sort(answerArray);
+			answer = new String(answerArray);
+			if (answer.contains("$")) {
+				answer = answer.replace("$", "");
+				answer = answer + "$";
+			}
+
 			finalAnswer += key + "," + answer + ";";
 		}
 		finalAnswer = finalAnswer.substring(0, finalAnswer.length() - 1);
-		System.out.println("Follow: " + finalAnswer);
+		return finalAnswer;
 	}
 
 	public static void main(String[] args) {
-
-		CFG cfg = new CFG("S,ScT,T;T,aSb,iaLb,e;L,SdL,S");
-		cfg.First();
-		cfg.Follow();
-		System.out.println("===========================");
-		CFG cfg2 = new CFG("S,aTbS,e;T,aTb,e");
-		cfg2.First();
-		cfg2.Follow();
-		System.out.println("===========================");
-		CFG cfg3 = new CFG("S,SAB,SBC,e;A,aAa,e;B,bB,e;C,cC,e");
-		cfg3.First();
-		cfg3.Follow();
-		System.out.println("===========================");
-		CFG cfg4 = new CFG("S,AB;A,aA,b;B,CA;C,cC,d");
-		cfg4.First();
-		cfg4.Follow();
-		System.out.println("===========================");
-		CFG cfg5 = new CFG("S,lAr,a;A,lArB,aB;B,cSB,e");
-		cfg5.First();
-		cfg5.Follow();
-		System.out.println("===========================");
-		CFG cfg6 = new CFG("S,aA;A,SB,e;B,bA,cA");
-		cfg6.First();
-		cfg6.Follow();
-		System.out.println("===========================");
-		CFG cfg7 = new CFG("S,ABCDZ;A,a,e;B,b,e;C,c;D,d,e;Z,z,e");
-		cfg7.First();
-		cfg7.Follow();
-		System.out.println("===========================");
-		CFG cfg8 = new CFG("Z,TX;X,+TX,e;T,FV;V,*FV,e;F,(Z),i");
-		cfg8.First();
-		cfg8.Follow();
-		System.out.println("===========================");
-		CFG cfg9 = new CFG("S,ACB,CbB,Ba;A,da,BC;B,g,e;C,h,e");
-		cfg9.First();
-		cfg9.Follow();
-		System.out.println("===========================");
-		CFG cfg10 = new CFG("S,Bb,Cd;B,aB,e;C,cC,e");
-		cfg10.First();
-		cfg10.Follow();
-		System.out.println("===========================");
-		CFG cfg11 = new CFG("S,aBDh;B,cC;C,bC,e;D,EF;E,g,e;F,f,e");
-		cfg11.First();
-		cfg11.Follow();
-		System.out.println("===========================");
-		CFG cfg12 = new CFG("S,A;A,aBF;F,dF,e;B,b;C,g");	
-		CFG cfg13 = new CFG("S,(L),a;L,SQ;Q,_SQ,e");
-		CFG cfg14 = new CFG("S,AaAb,BbBa;A,e;B,e");
-		CFG cfg15 = new CFG("E,TQ;Q,+TQ,e;T,FW;W,xFW,e;F,(E),i");
-		CFG cfg16 = new CFG("S,ABC,CbB,Ba;A,dA,BC;B,g,e;C,h,e");
-
+		String input = "S,ScT,T;T,aSb,iaLb,e;L,SdL,S";
+		CFG cfg = new CFG(input);
+		String firstEncoding = cfg.First();
+		String followEncoding = cfg.Follow();
+		System.out.println("First: " + firstEncoding);
+		System.out.println("Follow: " + followEncoding);
 	}
 }
